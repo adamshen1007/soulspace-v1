@@ -5,28 +5,28 @@ import { fetch as undiciFetch, Agent } from 'undici';
 const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-console.log("Supabase Key Check:", sbKey ? `${sbKey.substring(0, 5)}...` : "MISSING");
+// 生产环境 Vercel 不需要打印 Key，为了安全可以去掉 log，或者保留也没事
+// console.log("Supabase Key Check:", sbKey ? `${sbKey.substring(0, 5)}...` : "MISSING");
 
-// 👇 2. 创建一个“直连”的 Agent (不走代理)
+// 👇 2. 创建一个“直连”的 Agent
+// (注意：在 Vercel 生产环境其实不需要这个，但为了让你本地和线上代码一致，保留它无妨)
 const directAgent = new Agent({
   connect: {
-    timeout: 30000, // 30秒超时
+    timeout: 30000, 
   },
 });
 
-// 👇 3. 封装一个强制直连的 fetch 函数
 const customFetch = (url: any, options: any) => {
   return undiciFetch(url, {
     ...options,
-    dispatcher: directAgent, // 强制指定使用直连 Agent，无视全局代理
+    dispatcher: directAgent, 
   });
 };
 
-// 👇 4. 初始化 Supabase 时注入这个 customFetch
 const supabase = createClient(sbUrl, sbKey, {
   auth: { persistSession: false },
   global: {
-    fetch: customFetch as any, // 覆盖默认 fetch
+    fetch: customFetch as any, 
   },
 });
 
@@ -62,6 +62,13 @@ export async function checkAndConsumeCredit(userId: string) {
     profile = newProfile;
   }
 
+  // 👇👇👇【核心修复】👇👇👇
+  // 加这一段是为了满足 TypeScript，告诉它“到这里 profile 绝不可能是 null”
+  if (!profile) {
+    throw new Error("无法读取用户档案");
+  }
+  // 👆👆👆
+
   // 2. 检查余额
   if (profile.credits <= 0) {
     return { success: false, message: "灵力已耗尽，请补充能量" };
@@ -78,6 +85,5 @@ export async function checkAndConsumeCredit(userId: string) {
     return { success: false, message: "扣费失败，请重试" };
   }
 
-  console.log(`扣费成功: 用户 ${userId} 剩余 ${profile.credits - 1} 积分`);
   return { success: true, remaining: profile.credits - 1 };
 }
