@@ -1,6 +1,12 @@
+"use client";
+
 import Link from "next/link";
-import { ArrowRight, Sparkles, Clock, LayoutDashboard, Calendar, Compass } from "lucide-react";
-// 👇 关键修改：把 ./ 改成 @/ 或者 ../
+import { 
+  ArrowRight, Sparkles, Clock, LayoutDashboard, 
+  Calendar, Compass, User // 👈 新增 User 图标
+} from "lucide-react";
+
+// 👇 关键修改：把 ./ 改成 @/ 或者 ../ (根据你的目录结构)
 import SonicPlayer from "../components/SonicPlayer"; 
 import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 
@@ -42,7 +48,7 @@ export default function Home() {
       <main className="relative z-10 flex flex-col items-center justify-center min-h-screen p-6">
         
         {/* Hero Section */}
-        <div className="text-center space-y-8 mb-16 animate-fade-in">
+        <div className="text-center space-y-8 mb-12 animate-fade-in">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 border border-zen-black/5 text-xs tracking-[0.2em] text-zen-black/60 mb-4 hover:bg-white transition cursor-default">
             <Sparkles className="w-3 h-3 text-zen-gold" />
             <span>AI DRIVEN MINDFULNESS</span>
@@ -58,34 +64,41 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Feature Navigation Grid */}
-        <div className="flex flex-col md:flex-row gap-6 w-full max-w-4xl justify-center items-center">
+        {/* Feature Navigation Grid - 改为 2x2 网格布局以适应 4 个按钮 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl justify-items-center animate-fade-in-up">
           
           {/* 1. 空间诊断 */}
           <Link href="/analyze">
-            <button className="w-64 px-8 py-4 rounded-full border border-zen-black/10 text-zen-black/60 hover:bg-zen-black hover:text-zen-white transition-all font-light tracking-[0.2em] text-sm flex items-center justify-center gap-2 group hover:-translate-y-1">
+            <button className="w-64 px-8 py-4 rounded-full border border-zen-black/10 text-zen-black/60 hover:bg-zen-black hover:text-zen-white transition-all font-light tracking-[0.2em] text-sm flex items-center justify-center gap-2 group hover:-translate-y-1 bg-white/30 backdrop-blur-sm">
               <LayoutDashboard className="w-4 h-4 opacity-70" />
               <span>空间诊断</span>
-              {/* 这里保留一个微小的装饰，区分不同按钮 */}
               <ArrowRight className="w-3 h-3 opacity-0 -ml-2 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
             </button>
           </Link>
 
-          {/* 2. 决策罗盘 */}
+          {/* 2. 灵境观相 (新增) */}
+          <Link href="/face">
+            <button className="w-64 px-8 py-4 rounded-full border border-zen-black/10 text-zen-black/60 hover:bg-zen-black hover:text-zen-white transition-all font-light tracking-[0.2em] text-sm flex items-center justify-center gap-2 group hover:-translate-y-1 bg-white/30 backdrop-blur-sm">
+              <User className="w-4 h-4 opacity-70" />
+              <span>灵境观相</span>
+              <ArrowRight className="w-3 h-3 opacity-0 -ml-2 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
+            </button>
+          </Link>
+
+          {/* 3. 决策罗盘 */}
           <Link href="/oracle">
-            <button className="w-64 px-8 py-4 rounded-full border border-zen-black/10 text-zen-black/60 hover:bg-zen-black hover:text-zen-white transition-all font-light tracking-[0.2em] text-sm flex items-center justify-center gap-2 group hover:-translate-y-1">
+            <button className="w-64 px-8 py-4 rounded-full border border-zen-black/10 text-zen-black/60 hover:bg-zen-black hover:text-zen-white transition-all font-light tracking-[0.2em] text-sm flex items-center justify-center gap-2 group hover:-translate-y-1 bg-white/30 backdrop-blur-sm">
               <Compass className="w-4 h-4 opacity-70" />
               <span>决策罗盘</span>
               <span className="w-1.5 h-1.5 rounded-full bg-zen-gold group-hover:bg-zen-white animate-pulse"></span>
             </button>
           </Link>
 
-          {/* 3. 灵境日课 */}
+          {/* 4. 灵境日课 */}
           <Link href="/daily">
-            <button className="w-64 px-8 py-4 rounded-full border border-zen-black/10 text-zen-black/60 hover:bg-zen-black hover:text-zen-white transition-all font-light tracking-[0.2em] text-sm flex items-center justify-center gap-2 group hover:-translate-y-1">
-              <LayoutDashboard className="w-4 h-4 opacity-70" />
+            <button className="w-64 px-8 py-4 rounded-full border border-zen-black/10 text-zen-black/60 hover:bg-zen-black hover:text-zen-white transition-all font-light tracking-[0.2em] text-sm flex items-center justify-center gap-2 group hover:-translate-y-1 bg-white/30 backdrop-blur-sm">
+              <Calendar className="w-4 h-4 opacity-70" />
               <span>灵境日课</span>
-              {/* 这里保留一个微小的装饰，区分不同按钮 */}
               <ArrowRight className="w-3 h-3 opacity-0 -ml-2 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
             </button>
           </Link>
