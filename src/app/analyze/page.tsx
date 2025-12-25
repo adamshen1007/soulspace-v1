@@ -6,22 +6,26 @@ import Image from "next/image";
 import { UserButton } from "@clerk/nextjs";
 import { 
   Upload, Sparkles, RefreshCcw, Camera, 
-  ArrowLeft, Share2, Download, Scan, Eye, Wind 
+  ArrowLeft, Share2, Download, Scan, Eye, Wind, Loader2
 } from "lucide-react";
+// 👇 1. 引入 html2canvas
+import html2canvas from 'html2canvas';
 
 import PricingModal from "../../components/PricingModal";
 
 export default function AnalyzePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+  // 👇 2. 新增一个 Ref，用于指向要截图的区域
+  const resultRef = useRef<HTMLDivElement>(null);
+
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  // 新增：保存/分享时的 loading 状态
+  const [isSaving, setIsSaving] = useState(false);
   
-  // 商业化状态
   const [showPaywall, setShowPaywall] = useState(false);
 
-  // loading 文案轮播，增加仪式感
   const [loadingText, setLoadingText] = useState("正在建立能量链接...");
   useEffect(() => {
     if (!loading) return;
@@ -35,7 +39,7 @@ export default function AnalyzePage() {
     const timer = setInterval(() => {
       i = (i + 1) % texts.length;
       setLoadingText(texts[i]);
-    }, 1500); // 每1.5秒切换一次
+    }, 1500); 
     return () => clearInterval(timer);
   }, [loading]);
 
@@ -51,31 +55,23 @@ export default function AnalyzePage() {
 
   const handleAnalyze = async () => {
     if (!fileInputRef.current?.files?.[0]) return;
-
     setLoading(true);
     setResult(null);
-
     try {
       const formData = new FormData();
       formData.append("image", fileInputRef.current.files[0]);
-
       const res = await fetch("/api/analyze", {
         method: "POST",
         body: formData,
       });
-
       if (res.status === 402) {
         setShowPaywall(true); 
         setLoading(false);   
         return;
       }
-
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.error || "诊断失败");
-
       setResult(data.data);
-
     } catch (error: any) {
       console.error(error);
       alert(error.message || "连接时空失败，请重试");
@@ -84,16 +80,80 @@ export default function AnalyzePage() {
     }
   };
 
+  // 👇👇👇 新增核心功能：生成图片 URL 👇👇👇
+  const generateImage = async () => {
+    if (!resultRef.current) return null;
+    setIsSaving(true);
+    try {
+      // 调用 html2canvas 截图
+      const canvas = await html2canvas(resultRef.current, {
+        scale: 2, // 提高分辨率，让图片更清晰
+        useCORS: true, // 允许跨域图片 (虽然这里没用到外部图片，但加上保险)
+        backgroundColor: '#F5F5F0', // 确保背景色是我们的米色
+      });
+      const imageBase64 = canvas.toDataURL("image/png");
+      return imageBase64;
+    } catch (err) {
+      console.error("生成图片失败:", err);
+      alert("生成灵境海报失败，请重试");
+      return null;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // 👇 功能 A：保存图片到本地
+  const handleSave = async () => {
+    const imageBase64 = await generateImage();
+    if (!imageBase64) return;
+
+    // 创建一个虚拟的下载链接并点击它
+    const link = document.createElement('a');
+    link.href = imageBase64;
+    link.download = `灵境诊断报告_${new Date().toISOString().slice(0, 10)}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // 👇 功能 B：调用系统分享 (优先) 或保存图片
+  const handleShare = async () => {
+    const imageBase64 = await generateImage();
+    if (!imageBase64) return;
+
+    // 将 base64 转回 Blob 文件对象，以便分享
+    const fetchRes = await fetch(imageBase64);
+    const blob = await fetchRes.blob();
+    const file = new File([blob], "soulspace_report.png", { type: "image/png" });
+
+    // 尝试调用原生分享 API (主要在手机 Safari/Chrome 有效)
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          title: '灵境 · 空间诊断报告',
+          text: '这是我的空间能量诊断结果，快来看看！',
+          files: [file],
+        });
+      } catch (err) {
+        console.log("分享取消或失败", err);
+      }
+    } else {
+      // 如果不支持原生分享，就降级为下载图片
+      handleSave();
+      alert("已为您保存海报图片，请手动分享");
+    }
+  };
+  // 👆👆👆
+
   return (
     <div className="min-h-screen bg-zen-bg font-serif text-zen-black pb-24 selection:bg-zen-gold/30 relative overflow-x-hidden">
-      
-      {/* 🌌 1. 氛围背景：流动的能量光晕 */}
+      {/* 背景光晕保持不变 */}
       <div className="fixed inset-0 pointer-events-none z-0 opacity-40">
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-zen-gold/10 rounded-full blur-[100px] animate-pulse-slow" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-zen-green/5 rounded-full blur-[80px] animate-pulse-slower delay-1000" />
       </div>
 
-      {/* 顶部导航 */}
+      {/* 顶部导航保持不变 */}
       <nav className="fixed top-0 left-0 w-full p-6 bg-zen-bg/80 backdrop-blur-md z-30 flex justify-between items-center border-b border-zen-black/5">
         <Link href="/" className="flex items-center text-xs tracking-widest opacity-60 hover:opacity-100 transition group">
           <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" /> 
@@ -107,10 +167,8 @@ export default function AnalyzePage() {
         </div>
       </nav>
 
-      {/* 主内容区 */}
       <main className="pt-32 max-w-2xl mx-auto px-6 relative z-10">
-        
-        {/* 标题区：增加淡入动画 */}
+        {/* 标题区保持不变 */}
         {!result && (
           <header className={`text-center mb-12 transition-all duration-700 ${loading ? 'opacity-0 translate-y-4' : 'opacity-100 animate-fade-in-up'}`}>
             <h1 className="text-4xl font-light mb-4 text-zen-black tracking-widest">空间诊断</h1>
@@ -124,9 +182,8 @@ export default function AnalyzePage() {
           </header>
         )}
 
-        {/* 📸 2. 图片容器：增加“呼吸”与“扫描”效果 */}
+        {/* 图片容器保持不变 */}
         <div className={`relative transition-all duration-1000 ease-out ${result ? 'mb-12' : ''}`}>
-          
           <div 
             onClick={() => !loading && fileInputRef.current?.click()}
             className={`
@@ -139,24 +196,13 @@ export default function AnalyzePage() {
               ${loading ? 'scale-95 opacity-80 border-zen-gold/50 shadow-[0_0_30px_rgba(212,175,55,0.2)]' : 'scale-100'}
             `}
           >
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handleImageUpload} 
-              className="hidden" 
-              accept="image/*"
-            />
-
+            <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*"/>
             {image ? (
               <>
                 <Image src={image} alt="Space" fill className="object-cover transition-transform duration-[20s] ease-linear hover:scale-110" />
-                
-                {/* ✨ 扫描特效：上传后未诊断时显示 */}
                 {!loading && !result && (
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/20 to-transparent translate-y-[-100%] animate-scan pointer-events-none" />
                 )}
-
-                {/* 重新上传 */}
                 {!loading && (
                   <div className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                      <div className="bg-black/30 backdrop-blur-md text-white p-2 rounded-full hover:bg-zen-black transition">
@@ -176,16 +222,12 @@ export default function AnalyzePage() {
                 </p>
               </div>
             )}
-            
-            {/* Loading 遮罩 */}
             {loading && (
               <div className="absolute inset-0 bg-zen-bg/40 backdrop-blur-[2px] z-10 flex items-center justify-center">
                  <div className="w-full h-full absolute inset-0 bg-gradient-to-t from-zen-bg via-transparent to-zen-bg opacity-80"></div>
               </div>
             )}
           </div>
-
-          {/* 🔘 激活按钮：悬浮设计 */}
           {image && !result && !loading && (
             <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 z-20 animate-fade-in-up">
               <button 
@@ -201,7 +243,7 @@ export default function AnalyzePage() {
           )}
         </div>
 
-        {/* 🧘 3. 仪式感 Loading */}
+        {/* Loading 保持不变 */}
         {loading && (
           <div className="py-12 text-center animate-pulse-slow">
             <div className="relative w-16 h-16 mx-auto mb-8 flex items-center justify-center">
@@ -215,9 +257,10 @@ export default function AnalyzePage() {
           </div>
         )}
 
-        {/* 📜 4. 诊断结果：印章风格 */}
+        {/* 📜 4. 诊断结果：需要被截图的区域 */}
+        {/* 👇👇👇 重点：给最外层加 ref，并设置背景色，确保截图完整 */}
         {result && (
-          <div className="animate-fade-in-slow space-y-12">
+          <div ref={resultRef} className="animate-fade-in-slow space-y-12 bg-zen-bg p-4 -m-4 rounded-[3rem]">
             
             {/* 核心分数卡 - 罗盘设计 */}
             <div className="relative bg-white p-8 md:p-12 rounded-[2rem] shadow-2xl border border-zen-black/5 overflow-hidden group">
@@ -323,27 +366,43 @@ export default function AnalyzePage() {
               </div>
             )}
             
-            {/* 底部按钮 */}
-            <div className="flex justify-center gap-6 py-8 opacity-40 hover:opacity-100 transition-opacity duration-500">
-               <button className="flex flex-col items-center gap-2 group">
-                 <div className="w-10 h-10 rounded-full border border-zen-black/10 flex items-center justify-center group-hover:bg-zen-black group-hover:text-white transition-all">
-                    <Download className="w-4 h-4" />
-                 </div>
-                 <span className="text-[10px] tracking-widest">保存</span>
-               </button>
-               <button className="flex flex-col items-center gap-2 group">
-                 <div className="w-10 h-10 rounded-full border border-zen-black/10 flex items-center justify-center group-hover:bg-zen-black group-hover:text-white transition-all">
-                    <Share2 className="w-4 h-4" />
-                 </div>
-                 <span className="text-[10px] tracking-widest">分享</span>
-               </button>
+            {/* 👇 海报底部品牌标识 (仅截图时显示，增加仪式感) */}
+            <div className="text-center pt-8 pb-4 opacity-40">
+              <p className="text-[10px] tracking-[0.5em] uppercase">灵境 · SoulSpace</p>
+              <p className="text-[8px] mt-1 tracking-widest">AI DRIVEN MINDFULNESS</p>
             </div>
 
           </div>
         )}
+
+        {/* 👇 底部按钮：修改为调用 handleSave 和 handleShare */}
+        {result && (
+          <div className="flex justify-center gap-6 py-8 opacity-80 hover:opacity-100 transition-opacity duration-500 relative z-20">
+             <button 
+               onClick={handleSave} 
+               disabled={isSaving}
+               className="flex flex-col items-center gap-2 group disabled:opacity-50"
+             >
+               <div className="w-10 h-10 rounded-full border border-zen-black/10 flex items-center justify-center group-hover:bg-zen-black group-hover:text-white transition-all bg-white">
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+               </div>
+               <span className="text-[10px] tracking-widest">保存海报</span>
+             </button>
+             <button 
+               onClick={handleShare}
+               disabled={isSaving}
+               className="flex flex-col items-center gap-2 group disabled:opacity-50"
+             >
+               <div className="w-10 h-10 rounded-full border border-zen-black/10 flex items-center justify-center group-hover:bg-zen-black group-hover:text-white transition-all bg-white">
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
+               </div>
+               <span className="text-[10px] tracking-widest">一键分享</span>
+             </button>
+          </div>
+        )}
+
       </main>
 
-      {/* 商业化弹窗 */}
       {showPaywall && <PricingModal onClose={() => setShowPaywall(false)} />}
     </div>
   );

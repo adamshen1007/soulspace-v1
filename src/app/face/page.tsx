@@ -6,29 +6,36 @@ import Image from "next/image";
 import { UserButton } from "@clerk/nextjs";
 import { 
   Upload, Sparkles, RefreshCcw, Camera, 
-  ArrowLeft, Share2, Download, Scan, Eye, User, Fingerprint
+  ArrowLeft, Share2, Download, Scan, Eye, User, Fingerprint, Loader2
 } from "lucide-react";
+// 👇 1. 引入 html2canvas
+import html2canvas from 'html2canvas';
 
 // 引入弹窗组件
 import PricingModal from "../../components/PricingModal";
 
 export default function FacePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // 👇 2. 新增 Ref 用于指向要截图的区域
+  const resultRef = useRef<HTMLDivElement>(null);
   
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   
+  // 保存/分享时的 loading 状态
+  const [isSaving, setIsSaving] = useState(false);
+  
   // 商业化状态
   const [showPaywall, setShowPaywall] = useState(false);
 
-  // 👇 Loading 文案轮播：修改为面相/《冰鉴》相关
+  // Loading 文案轮播
   const [loadingText, setLoadingText] = useState("正在建立能量链接...");
   useEffect(() => {
     if (!loading) return;
     const texts = [
       "正在建立能量链接...",
-      "正在研读《冰鉴》，观神采气色...", // 👈 修改点
+      "正在研读《冰鉴》，观神采气色...",
       "解析五官比例与流年运势...",
       "正在与内在真我对话..."
     ];
@@ -60,7 +67,6 @@ export default function FacePage() {
       const formData = new FormData();
       formData.append("image", fileInputRef.current.files[0]);
 
-      // 👇👇👇 修改点：调用面相 API
       const res = await fetch("/api/face", {
         method: "POST",
         body: formData,
@@ -86,10 +92,72 @@ export default function FacePage() {
     }
   };
 
+  // 👇👇👇 新增核心功能：生成图片 URL 👇👇👇
+  const generateImage = async () => {
+    if (!resultRef.current) return null;
+    setIsSaving(true);
+    try {
+      // 调用 html2canvas 截图
+      const canvas = await html2canvas(resultRef.current, {
+        scale: 2, // 提高分辨率
+        useCORS: true, 
+        backgroundColor: '#F5F5F0', // 确保背景色统一
+      });
+      const imageBase64 = canvas.toDataURL("image/png");
+      return imageBase64;
+    } catch (err) {
+      console.error("生成图片失败:", err);
+      alert("生成灵境海报失败，请重试");
+      return null;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // 👇 功能 A：保存图片
+  const handleSave = async () => {
+    const imageBase64 = await generateImage();
+    if (!imageBase64) return;
+
+    const link = document.createElement('a');
+    link.href = imageBase64;
+    // 文件名改为观相报告
+    link.download = `灵境观相报告_${new Date().toISOString().slice(0, 10)}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // 👇 功能 B：系统分享
+  const handleShare = async () => {
+    const imageBase64 = await generateImage();
+    if (!imageBase64) return;
+
+    const fetchRes = await fetch(imageBase64);
+    const blob = await fetchRes.blob();
+    const file = new File([blob], "soulspace_face_report.png", { type: "image/png" });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          title: '灵境 · 观相报告',
+          text: '这是我的灵境观相解读，推荐你也来测测！',
+          files: [file],
+        });
+      } catch (err) {
+        console.log("分享取消或失败", err);
+      }
+    } else {
+      handleSave();
+      alert("已为您保存海报图片，请手动分享");
+    }
+  };
+  // 👆👆👆
+
   return (
     <div className="min-h-screen bg-zen-bg font-serif text-zen-black pb-24 selection:bg-zen-gold/30 relative overflow-x-hidden">
       
-      {/* 🌌 1. 氛围背景：光晕调整 (稍微偏暖，模拟肤色/金光) */}
+      {/* 🌌 1. 氛围背景 */}
       <div className="fixed inset-0 pointer-events-none z-0 opacity-40">
         <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-zen-gold/15 rounded-full blur-[100px] animate-pulse-slow" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-red-100/20 rounded-full blur-[80px] animate-pulse-slower delay-1000" />
@@ -123,14 +191,13 @@ export default function FacePage() {
               <Fingerprint className="w-3 h-3" />
               <span>真我</span>
             </div>
-            {/* 👇 修改点：引导文案 */}
             <p className="mt-6 text-xs text-zen-black/40 tracking-[0.2em] leading-loose">
               上传面部特写 · 观照内在真我 · 解析性格密码
             </p>
           </header>
         )}
 
-        {/* 📸 2. 图片容器：修改为竖向椭圆/镜子形状 */}
+        {/* 📸 2. 图片容器 */}
         <div className={`relative transition-all duration-1000 ease-out flex justify-center ${result ? 'mb-12' : ''}`}>
           
           <div 
@@ -222,8 +289,9 @@ export default function FacePage() {
         )}
 
         {/* 📜 4. 诊断结果 */}
+        {/* 👇👇👇 给这里加 ref 和背景色，包裹要截图的区域 */}
         {result && (
-          <div className="animate-fade-in-slow space-y-12">
+          <div ref={resultRef} className="animate-fade-in-slow space-y-12 bg-zen-bg p-4 -m-4 rounded-[3rem]">
             
             {/* 核心分数卡 */}
             <div className="relative bg-white p-8 md:p-12 rounded-[2rem] shadow-2xl border border-zen-black/5 overflow-hidden group">
@@ -267,7 +335,7 @@ export default function FacePage() {
                 </div>
               </div>
 
-              {/* 维度条 - 会自动渲染 API 返回的 spirit, intellect 等字段 */}
+              {/* 维度条 */}
               <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 pt-8 border-t border-zen-black/5">
                 {result.dimensions && Object.entries(result.dimensions).map(([key, value]: any, i) => (
                   <div key={key} className="flex items-center gap-4 group/item" style={{ transitionDelay: `${i * 100}ms` }}>
@@ -284,7 +352,7 @@ export default function FacePage() {
               </div>
             </div>
 
-            {/* 面相特征列表 (API 返回的是 features 数组) */}
+            {/* 面相特征列表 */}
             {result.features && result.features.length > 0 && (
               <div className="space-y-6">
                 <div className="flex items-center justify-center gap-4 opacity-40">
@@ -326,24 +394,41 @@ export default function FacePage() {
               </div>
             )}
             
-            {/* 底部按钮 */}
-            <div className="flex justify-center gap-6 py-8 opacity-40 hover:opacity-100 transition-opacity duration-500">
-               <button className="flex flex-col items-center gap-2 group">
-                 <div className="w-10 h-10 rounded-full border border-zen-black/10 flex items-center justify-center group-hover:bg-zen-black group-hover:text-white transition-all">
-                    <Download className="w-4 h-4" />
-                 </div>
-                 <span className="text-[10px] tracking-widest">保存</span>
-               </button>
-               <button className="flex flex-col items-center gap-2 group">
-                 <div className="w-10 h-10 rounded-full border border-zen-black/10 flex items-center justify-center group-hover:bg-zen-black group-hover:text-white transition-all">
-                    <Share2 className="w-4 h-4" />
-                 </div>
-                 <span className="text-[10px] tracking-widest">分享</span>
-               </button>
+            {/* 👇 海报底部品牌标识 (截图专用) */}
+            <div className="text-center pt-8 pb-4 opacity-40">
+              <p className="text-[10px] tracking-[0.5em] uppercase">灵境 · SoulSpace</p>
+              <p className="text-[8px] mt-1 tracking-widest">FACE PHYSIOGNOMY AI</p>
             </div>
 
           </div>
         )}
+
+        {/* 👇 底部按钮：调用 handleSave 和 handleShare */}
+        {result && (
+          <div className="flex justify-center gap-6 py-8 opacity-80 hover:opacity-100 transition-opacity duration-500 relative z-20">
+             <button 
+               onClick={handleSave} 
+               disabled={isSaving}
+               className="flex flex-col items-center gap-2 group disabled:opacity-50"
+             >
+               <div className="w-10 h-10 rounded-full border border-zen-black/10 flex items-center justify-center group-hover:bg-zen-black group-hover:text-white transition-all bg-white">
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+               </div>
+               <span className="text-[10px] tracking-widest">保存报告</span>
+             </button>
+             <button 
+               onClick={handleShare}
+               disabled={isSaving}
+               className="flex flex-col items-center gap-2 group disabled:opacity-50"
+             >
+               <div className="w-10 h-10 rounded-full border border-zen-black/10 flex items-center justify-center group-hover:bg-zen-black group-hover:text-white transition-all bg-white">
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
+               </div>
+               <span className="text-[10px] tracking-widest">分享给朋友</span>
+             </button>
+          </div>
+        )}
+
       </main>
 
       {/* 商业化弹窗 */}
