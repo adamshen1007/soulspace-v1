@@ -1,0 +1,43 @@
+import type { Config } from "tailwindcss";
+
+const config: Config = {
+  content: [
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        // 五行色系 (低饱和度)
+        'zen-green': '#A6CBAF',   // 青瓷绿
+        'zen-red': '#D69E96',     // 朱砂红
+        'zen-black': '#2C2F33',   // 玄黑
+        'zen-gold': '#E6CFA1',    // 赤金
+        'zen-white': '#F5F5F3',   // 云白
+        'zen-bg': '#F9F9F7',      // 宣纸底色
+      },
+      animation: {
+        'breathe': 'breathe 8s ease-in-out infinite',
+        'float': 'float 10s ease-in-out infinite',
+        'mist': 'mist 20s linear infinite',
+      },
+      keyframes: {
+        breathe: {
+          '0%, 100%': { opacity: '0.8', transform: 'scale(1)' },
+          '50%': { opacity: '1', transform: 'scale(1.02)' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
+        mist: {
+          '0%': { backgroundPosition: '0% 50%' },
+          '100%': { backgroundPosition: '100% 50%' },
+        }
+      },
+    },
+  },
+  plugins: [],
+};
+export default config;
