@@ -5,11 +5,10 @@ import { fetch as undiciFetch, Agent } from 'undici';
 const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-// 生产环境 Vercel 不需要打印 Key，为了安全可以去掉 log，或者保留也没事
+// 生产环境 Vercel 不需要打印 Key，为了安全可以去掉 log
 // console.log("Supabase Key Check:", sbKey ? `${sbKey.substring(0, 5)}...` : "MISSING");
 
 // 👇 2. 创建一个“直连”的 Agent
-// (注意：在 Vercel 生产环境其实不需要这个，但为了让你本地和线上代码一致，保留它无妨)
 const directAgent = new Agent({
   connect: {
     timeout: 30000, 
@@ -62,14 +61,14 @@ export async function checkAndConsumeCredit(userId: string) {
     profile = newProfile;
   }
 
-  // 👇👇👇【核心修复】👇👇👇
+  // 👇👇👇【核心修复：类型守卫】👇👇👇
   // 加这一段是为了满足 TypeScript，告诉它“到这里 profile 绝不可能是 null”
   if (!profile) {
-    throw new Error("无法读取用户档案");
+    throw new Error("系统异常：无法读取用户档案");
   }
   // 👆👆👆
 
-  // 2. 检查余额
+  // 2. 检查余额 (这时候 TS 就放心了，知道 profile 肯定有值)
   if (profile.credits <= 0) {
     return { success: false, message: "灵力已耗尽，请补充能量" };
   }
