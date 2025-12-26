@@ -8,28 +8,21 @@ import {
   Upload, Sparkles, RefreshCcw, Camera, 
   ArrowLeft, Share2, Download, Scan, Eye, User, Fingerprint, Loader2
 } from "lucide-react";
-// 👇 1. 引入 html2canvas
 import html2canvas from 'html2canvas';
 
-// 引入弹窗组件
 import PricingModal from "../../components/PricingModal";
 
 export default function FacePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // 👇 2. 新增 Ref 用于指向要截图的区域
+  // 指向要截图的区域
   const resultRef = useRef<HTMLDivElement>(null);
   
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
-  
-  // 保存/分享时的 loading 状态
   const [isSaving, setIsSaving] = useState(false);
-  
-  // 商业化状态
   const [showPaywall, setShowPaywall] = useState(false);
 
-  // Loading 文案轮播
   const [loadingText, setLoadingText] = useState("正在建立能量链接...");
   useEffect(() => {
     if (!loading) return;
@@ -92,16 +85,16 @@ export default function FacePage() {
     }
   };
 
-  // 👇👇👇 新增核心功能：生成图片 URL 👇👇👇
+  // 生成图片 URL
   const generateImage = async () => {
     if (!resultRef.current) return null;
     setIsSaving(true);
     try {
       // 调用 html2canvas 截图
       const canvas = await html2canvas(resultRef.current, {
-        scale: 2, // 提高分辨率
+        scale: 3, // 进一步提高分辨率，保证文字清晰
         useCORS: true, 
-        backgroundColor: '#F5F5F0', // 确保背景色统一
+        backgroundColor: null, // 设置为 null，保留卡片外部的透明感，让它看起来是个独立的物体
       });
       const imageBase64 = canvas.toDataURL("image/png");
       return imageBase64;
@@ -114,21 +107,18 @@ export default function FacePage() {
     }
   };
 
-  // 👇 功能 A：保存图片
   const handleSave = async () => {
     const imageBase64 = await generateImage();
     if (!imageBase64) return;
 
     const link = document.createElement('a');
     link.href = imageBase64;
-    // 文件名改为观相报告
     link.download = `灵境观相报告_${new Date().toISOString().slice(0, 10)}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  // 👇 功能 B：系统分享
   const handleShare = async () => {
     const imageBase64 = await generateImage();
     if (!imageBase64) return;
@@ -152,12 +142,11 @@ export default function FacePage() {
       alert("已为您保存海报图片，请手动分享");
     }
   };
-  // 👆👆👆
 
   return (
     <div className="min-h-screen bg-zen-bg font-serif text-zen-black pb-24 selection:bg-zen-gold/30 relative overflow-x-hidden">
       
-      {/* 🌌 1. 氛围背景 */}
+      {/* 氛围背景 */}
       <div className="fixed inset-0 pointer-events-none z-0 opacity-40">
         <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-zen-gold/15 rounded-full blur-[100px] animate-pulse-slow" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-red-100/20 rounded-full blur-[80px] animate-pulse-slower delay-1000" />
@@ -197,8 +186,8 @@ export default function FacePage() {
           </header>
         )}
 
-        {/* 📸 2. 图片容器 */}
-        <div className={`relative transition-all duration-1000 ease-out flex justify-center ${result ? 'mb-12' : ''}`}>
+        {/* 图片容器 */}
+        <div className={`relative transition-all duration-1000 ease-out flex justify-center ${result ? 'mb-8 opacity-0 h-0 overflow-hidden' : ''}`}>
           
           <div 
             onClick={() => !loading && fileInputRef.current?.click()}
@@ -224,12 +213,10 @@ export default function FacePage() {
               <>
                 <Image src={image} alt="Face" fill className="object-cover transition-transform duration-[20s] ease-linear hover:scale-110" />
                 
-                {/* 扫描特效 */}
                 {!loading && !result && (
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/20 to-transparent translate-y-[-100%] animate-scan pointer-events-none" />
                 )}
 
-                {/* 重新上传 */}
                 {!loading && (
                   <div className="absolute bottom-4 right-1/2 translate-x-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                      <div className="bg-black/30 backdrop-blur-md text-white px-4 py-2 rounded-full text-[10px] tracking-widest hover:bg-zen-black transition flex items-center gap-2 whitespace-nowrap">
@@ -250,7 +237,6 @@ export default function FacePage() {
               </div>
             )}
             
-            {/* Loading 遮罩 */}
             {loading && (
               <div className="absolute inset-0 bg-zen-bg/40 backdrop-blur-[2px] z-10 flex items-center justify-center">
                  <div className="w-full h-full absolute inset-0 bg-gradient-to-t from-zen-bg via-transparent to-zen-bg opacity-80"></div>
@@ -258,7 +244,6 @@ export default function FacePage() {
             )}
           </div>
 
-          {/* 🔘 激活按钮 */}
           {image && !result && !loading && (
             <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 z-20 animate-fade-in-up">
               <button 
@@ -274,7 +259,7 @@ export default function FacePage() {
           )}
         </div>
 
-        {/* 🧘 3. 仪式感 Loading */}
+        {/* Loading */}
         {loading && (
           <div className="py-12 text-center animate-pulse-slow">
             <div className="relative w-16 h-16 mx-auto mb-8 flex items-center justify-center">
@@ -288,150 +273,155 @@ export default function FacePage() {
           </div>
         )}
 
-        {/* 📜 4. 诊断结果 */}
-        {/* 👇👇👇 给这里加 ref 和背景色，包裹要截图的区域 */}
+        {/* 📜 4. 诊断结果 (Ins/小红书风格卡片) */}
+        {/* 👇👇👇 核心修改区域：全新设计的卡片结构 👇👇👇 */}
         {result && (
-          <div ref={resultRef} className="animate-fade-in-slow space-y-12 bg-zen-bg p-4 -m-4 rounded-[3rem]">
-            
-            {/* 核心分数卡 */}
-            <div className="relative bg-white p-8 md:p-12 rounded-[2rem] shadow-2xl border border-zen-black/5 overflow-hidden group">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-zen-gold/5 rounded-full blur-[60px] translate-x-1/3 -translate-y-1/3"></div>
+          <div className="animate-fade-in-slow py-8">
+            <div 
+              ref={resultRef} 
+              className="relative bg-white rounded-[3rem] p-8 md:p-12 shadow-[0_20px_60px_-15px_rgba(212,175,55,0.15)] border border-stone-100 overflow-hidden"
+            >
+              {/* 装饰：顶部和纸胶带效果 */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-8 bg-zen-gold/10 rotate-3 blur-[1px] rounded-b-xl z-0"></div>
 
-              <div className="flex flex-col md:flex-row gap-10 items-center">
-                
-                {/* 分数展示 */}
-                <div className="relative w-40 h-40 flex-shrink-0 flex items-center justify-center">
-                  <svg className="absolute inset-0 w-full h-full animate-spin-veryslow opacity-20" viewBox="0 0 100 100">
-                    <circle cx="50" cy="50" r="48" stroke="currentColor" strokeWidth="0.5" fill="none" strokeDasharray="4 4" />
-                    <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="0.5" fill="none" />
-                  </svg>
-                  <div className="relative text-center z-10">
-                    <span className="block text-6xl font-light text-zen-black font-serif tracking-tighter">{result.score}</span>
-                    <span className="block text-[10px] text-zen-gold tracking-[0.3em] uppercase mt-1">Energy</span>
-                  </div>
-                  <svg className="absolute inset-0 w-full h-full -rotate-90">
-                     <circle cx="50" cy="50" r="44" stroke="#eee" strokeWidth="2" fill="none" />
-                     <circle 
-                       cx="50" cy="50" r="44" 
-                       stroke="var(--zen-gold)" strokeWidth="2" fill="none" 
-                       strokeDasharray="276"
-                       strokeDashoffset={276 - (276 * result.score) / 100}
-                       className="transition-all duration-[2s] ease-out"
-                     />
-                  </svg>
+              {/* 头部：照片与标题 */}
+              <div className="relative z-10 flex flex-col items-center mb-10">
+                <div className="w-28 h-28 rounded-full border-4 border-white shadow-xl overflow-hidden relative mb-6">
+                  {image && <Image src={image} alt="User Face" fill className="object-cover" />}
                 </div>
-                
-                {/* 判词 */}
-                <div className="flex-1 text-center md:text-left">
-                  <div className="mb-4">
-                     <h2 className="text-xs font-bold text-zen-gold uppercase tracking-widest mb-2">Soul Signature</h2>
-                     <div className="w-12 h-[1px] bg-zen-black/10 mx-auto md:mx-0"></div>
-                  </div>
-                  <p className="text-lg leading-relaxed text-zen-black/80 font-serif italic relative">
-                    <span className="text-3xl text-zen-gold/30 absolute -top-4 -left-4 font-serif">“</span>
-                    {result.summary}
-                    <span className="text-3xl text-zen-gold/30 absolute -bottom-4 -right-0 font-serif rotate-180">“</span>
-                  </p>
-                </div>
+                <h3 className="text-sm tracking-[0.3em] text-zen-black font-bold uppercase">
+                  灵境 · 观相报告
+                </h3>
+                <p className="text-[10px] text-zen-gold tracking-[0.2em] mt-2">
+                  {new Date().toLocaleDateString('zh-CN').replace(/\//g, '.')}
+                </p>
               </div>
-
-              {/* 维度条 */}
-              <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 pt-8 border-t border-zen-black/5">
-                {result.dimensions && Object.entries(result.dimensions).map(([key, value]: any, i) => (
-                  <div key={key} className="flex items-center gap-4 group/item" style={{ transitionDelay: `${i * 100}ms` }}>
-                    <span className="text-[10px] uppercase tracking-widest w-20 text-right opacity-50">{key}</span>
-                    <div className="flex-1 h-1 bg-zen-black/5 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-zen-black/60 rounded-full transition-all duration-[1.5s] ease-out group-hover/item:bg-zen-gold" 
-                        style={{ width: `${value}%` }}
-                      ></div>
+              
+              {/* 核心分数卡 (样式微调，融入白色背景) */}
+              <div className="relative bg-zen-bg/50 p-8 rounded-[2.5rem] mb-10">
+                <div className="flex flex-col md:flex-row gap-10 items-center">
+                  {/* 分数 */}
+                  <div className="relative w-36 h-36 flex-shrink-0 flex items-center justify-center">
+                    {/* ... SVG 保持不变 ... */}
+                    <svg className="absolute inset-0 w-full h-full animate-spin-veryslow opacity-20" viewBox="0 0 100 100">
+                      <circle cx="50" cy="50" r="48" stroke="currentColor" strokeWidth="0.5" fill="none" strokeDasharray="4 4" />
+                      <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="0.5" fill="none" />
+                    </svg>
+                    <div className="relative text-center z-10">
+                      <span className="block text-5xl font-light text-zen-black font-serif tracking-tighter">{result.score}</span>
+                      <span className="block text-[9px] text-zen-gold tracking-[0.3em] uppercase mt-1">Energy</span>
                     </div>
-                    <span className="text-xs font-bold opacity-30 w-8">{value}</span>
+                    <svg className="absolute inset-0 w-full h-full -rotate-90">
+                       <circle cx="50" cy="50" r="44" stroke="#eee" strokeWidth="2" fill="none" />
+                       <circle 
+                         cx="50" cy="50" r="44" 
+                         stroke="var(--zen-gold)" strokeWidth="2" fill="none" 
+                         strokeDasharray="276"
+                         strokeDashoffset={276 - (276 * result.score) / 100}
+                         className="transition-all duration-[2s] ease-out"
+                       />
+                    </svg>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 面相特征列表 */}
-            {result.features && result.features.length > 0 && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-center gap-4 opacity-40">
-                   <div className="h-[1px] w-12 bg-zen-black"></div>
-                   <span className="text-xs tracking-[0.3em] uppercase">Features</span>
-                   <div className="h-[1px] w-12 bg-zen-black"></div>
+                  
+                  {/* 判词 */}
+                  <div className="flex-1 text-center md:text-left">
+                    <h2 className="text-xs font-bold text-zen-gold uppercase tracking-widest mb-4">Soul Signature</h2>
+                    <p className="text-base leading-relaxed text-zen-black/80 font-serif italic relative px-4 md:px-0">
+                      <span className="text-2xl text-zen-gold/30 absolute -top-3 -left-2 font-serif">“</span>
+                      {result.summary}
+                      <span className="text-2xl text-zen-gold/30 absolute -bottom-3 right-0 font-serif rotate-180">“</span>
+                    </p>
+                  </div>
                 </div>
-                
-                {result.features.map((item: any, i: number) => (
-                  <div key={i} className="bg-white/60 backdrop-blur-sm p-6 rounded-2xl border border-zen-black/5 hover:bg-white hover:shadow-lg hover:border-zen-gold/20 transition-all duration-500 group">
-                    <div className="flex items-start gap-4">
-                      <div className="text-xs font-serif text-zen-gold/50 mt-1">0{i + 1}</div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h4 className="font-medium text-zen-black">{item.part}</h4>
-                          <span className="text-[9px] px-2 py-0.5 rounded-full border border-zen-black/10 text-zen-black/60 font-serif">
-                            {item.tag}
-                          </span>
-                        </div>
-                        <p className="text-sm text-zen-black/60 leading-relaxed mb-4">
-                          {item.description}
-                        </p>
-                        
-                        {item.suggestion && (
-                          <div className="relative overflow-hidden bg-zen-bg p-4 rounded-xl border border-zen-black/5 group-hover:border-zen-gold/10 transition-colors">
-                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-zen-gold opacity-30"></div>
-                            <div className="flex gap-3">
-                              <Sparkles className="w-4 h-4 text-zen-gold mt-0.5 flex-shrink-0" />
-                              <div className="text-sm text-zen-black/80 italic">
-                                {item.suggestion}
-                              </div>
-                            </div>
-                          </div>
-                        )}
+
+                {/* 维度条 (样式微调) */}
+                <div className="mt-8 grid grid-cols-1 gap-y-4 pt-6 border-t border-zen-black/5">
+                  {result.dimensions && Object.entries(result.dimensions).map(([key, value]: any, i) => (
+                    <div key={key} className="flex items-center gap-4">
+                      <span className="text-[9px] uppercase tracking-widest w-16 text-right opacity-50">{key}</span>
+                      <div className="flex-1 h-1.5 bg-white rounded-full overflow-hidden shadow-sm">
+                        <div 
+                          className="h-full bg-gradient-to-r from-zen-gold/60 to-zen-gold rounded-full" 
+                          style={{ width: `${value}%` }}
+                        ></div>
                       </div>
+                      <span className="text-xs font-bold opacity-40 w-6 text-right">{value}</span>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            )}
-            
-            {/* 👇 海报底部品牌标识 (截图专用) */}
-            <div className="text-center pt-8 pb-4 opacity-40">
-              <p className="text-[10px] tracking-[0.5em] uppercase">灵境 · SoulSpace</p>
-              <p className="text-[8px] mt-1 tracking-widest">FACE PHYSIOGNOMY AI</p>
-            </div>
 
+              {/* 面相特征列表 (Ins 风标签样式) */}
+              {result.features && result.features.length > 0 && (
+                <div className="space-y-8">
+                  <div className="text-center">
+                     <span className="inline-block text-xs tracking-[0.3em] uppercase border-b border-zen-gold/30 pb-2">Features 解读</span>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 gap-4">
+                    {result.features.map((item: any, i: number) => (
+                      <div key={i} className="bg-zen-bg/30 p-5 rounded-2xl flex items-start gap-4">
+                        <div className="flex-shrink-0 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm text-zen-gold">
+                          <Sparkles className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <h4 className="font-medium text-sm text-zen-black">{item.part}</h4>
+                            <span className="text-[9px] px-2 py-0.5 rounded-full bg-white text-zen-black/60 font-serif shadow-sm">
+                              {item.tag}
+                            </span>
+                          </div>
+                          <p className="text-xs text-zen-black/70 leading-relaxed text-justify">
+                            {item.description}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* 底部品牌 (截图专用) */}
+              <div className="text-center pt-10 pb-2 opacity-30">
+                <p className="text-[8px] tracking-[0.5em] uppercase flex items-center justify-center gap-2">
+                  <Fingerprint className="w-3 h-3" />
+                  SoulSpace AI Lab
+                </p>
+              </div>
+
+            </div>
           </div>
         )}
+        {/* 👆👆👆 卡片结构结束 👆👆👆 */}
 
-        {/* 👇 底部按钮：调用 handleSave 和 handleShare */}
+        {/* 底部按钮 */}
         {result && (
-          <div className="flex justify-center gap-6 py-8 opacity-80 hover:opacity-100 transition-opacity duration-500 relative z-20">
+          <div className="flex justify-center gap-6 pb-12 opacity-90 hover:opacity-100 transition-opacity duration-500 relative z-20 -mt-4">
              <button 
                onClick={handleSave} 
                disabled={isSaving}
                className="flex flex-col items-center gap-2 group disabled:opacity-50"
              >
-               <div className="w-10 h-10 rounded-full border border-zen-black/10 flex items-center justify-center group-hover:bg-zen-black group-hover:text-white transition-all bg-white">
-                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+               <div className="w-12 h-12 rounded-full bg-zen-black flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-all">
+                  {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
                </div>
-               <span className="text-[10px] tracking-widest">保存报告</span>
+               <span className="text-[10px] tracking-widest font-bold">保存美图</span>
              </button>
              <button 
                onClick={handleShare}
                disabled={isSaving}
                className="flex flex-col items-center gap-2 group disabled:opacity-50"
              >
-               <div className="w-10 h-10 rounded-full border border-zen-black/10 flex items-center justify-center group-hover:bg-zen-black group-hover:text-white transition-all bg-white">
-                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
+               <div className="w-12 h-12 rounded-full bg-zen-gold flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-all">
+                  {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Share2 className="w-5 h-5" />}
                </div>
-               <span className="text-[10px] tracking-widest">分享给朋友</span>
+               <span className="text-[10px] tracking-widest font-bold">去晒单</span>
              </button>
           </div>
         )}
 
       </main>
 
-      {/* 商业化弹窗 */}
       {showPaywall && <PricingModal onClose={() => setShowPaywall(false)} />}
     </div>
   );
