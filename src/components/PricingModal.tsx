@@ -1,12 +1,12 @@
 "use client";
 
-import { X, Zap, Loader2, Sparkles } from "lucide-react";
+import { X, Zap, Loader2, Sparkles, Lock } from "lucide-react";
 import { useState } from "react";
 
 export default function PricingModal({ onClose }: { onClose: () => void }) {
   const [loading, setLoading] = useState(false);
 
-  // 👇 处理支付的核心逻辑
+  // 👇 处理支付的核心逻辑 (已优化体验)
   const handleCheckout = async (plan: 'basic' | 'pro') => {
     if (loading) return; // 防止重复点击
     setLoading(true);
@@ -21,7 +21,9 @@ export default function PricingModal({ onClose }: { onClose: () => void }) {
       const data = await res.json();
       
       if (data.url) {
-        // 跳转到 Stripe 支付页面
+        // ✅ 成功获取跳转链接
+        // 注意：这里不要 setloading(false)
+        // 让 Loading 遮罩一直显示，直到浏览器完成跳转，避免页面卡顿/白屏
         window.location.href = data.url;
       } else {
         alert("支付初始化失败，请稍后重试");
@@ -36,13 +38,13 @@ export default function PricingModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zen-black/60 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl relative">
+      <div className="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl relative transition-all">
         
-        {/* 关闭按钮 */}
+        {/* 关闭按钮 - Loading 时禁用 */}
         <button 
           onClick={!loading ? onClose : undefined} 
           disabled={loading}
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition z-10 disabled:opacity-50"
+          className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition z-10 disabled:opacity-30 disabled:cursor-not-allowed"
         >
           <X className="w-5 h-5 opacity-50" />
         </button>
@@ -63,7 +65,7 @@ export default function PricingModal({ onClose }: { onClose: () => void }) {
               className={`
                 border border-zen-black/10 rounded-xl p-4 flex items-center justify-between 
                 hover:border-zen-gold transition cursor-pointer group select-none
-                ${loading ? 'opacity-50 cursor-not-allowed' : ''}
+                ${loading ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}
               `}
             >
               <div className="text-left">
@@ -83,7 +85,7 @@ export default function PricingModal({ onClose }: { onClose: () => void }) {
               className={`
                 border border-zen-gold/50 bg-zen-gold/5 rounded-xl p-4 flex items-center justify-between 
                 cursor-pointer relative overflow-hidden hover:shadow-md transition-all select-none
-                ${loading ? 'opacity-50 cursor-not-allowed' : ''}
+                ${loading ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}
               `}
             >
               <div className="absolute top-0 right-0 bg-zen-gold text-white text-[10px] px-2 py-0.5 rounded-bl-lg">热销</div>
@@ -99,15 +101,23 @@ export default function PricingModal({ onClose }: { onClose: () => void }) {
             </div>
           </div>
 
-          <p className="text-[10px] text-center mt-6 opacity-30">
-            Secure payment powered by Stripe
+          <p className="text-[10px] text-center mt-6 opacity-30 flex items-center justify-center gap-1">
+            <Lock className="w-3 h-3" /> Secure payment powered by Stripe
           </p>
 
-          {/* Loading 遮罩 */}
+          {/* 👇 优化后的 Loading 遮罩 */}
           {loading && (
-            <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] flex flex-col items-center justify-center z-20 rounded-3xl">
-              <Loader2 className="w-8 h-8 text-zen-gold animate-spin mb-2" />
-              <p className="text-xs text-zen-black/60 tracking-widest">正在前往收银台...</p>
+            <div className="absolute inset-0 bg-white/90 backdrop-blur-[2px] flex flex-col items-center justify-center z-20 rounded-3xl animate-fade-in">
+              <div className="relative">
+                <Loader2 className="w-10 h-10 text-zen-gold animate-spin mb-4" />
+                <div className="absolute inset-0 blur-lg bg-zen-gold/30 animate-pulse"></div>
+              </div>
+              <p className="text-sm font-medium text-zen-black tracking-widest mb-1">
+                正在连接安全支付网关...
+              </p>
+              <p className="text-[10px] text-zen-black/40">
+                请勿关闭页面，即将跳转
+              </p>
             </div>
           )}
         </div>
