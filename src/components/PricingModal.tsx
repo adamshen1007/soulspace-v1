@@ -90,9 +90,9 @@ export default function PricingModal({ onClose }: { onClose: () => void }) {
             >
               <div className="absolute top-0 right-0 bg-zen-gold text-white text-[10px] px-2 py-0.5 rounded-bl-lg">热销</div>
               <div className="text-left">
-                <div className="font-bold text-lg text-zen-black">29.9元 <span className="text-xs font-normal opacity-50">/ 50次</span></div>
+                <div className="font-bold text-lg text-zen-black">29.9元 <span className="text-xs font-normal opacity-50">/ 35次</span></div>
                 <div className="text-xs text-zen-gold font-medium flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" /> 多送 15 次
+                  <Sparkles className="w-3 h-3" /> 多送 5 次
                 </div>
               </div>
               <button className="px-4 py-1.5 rounded-full bg-zen-gold text-zen-black text-xs font-bold shadow-sm">
