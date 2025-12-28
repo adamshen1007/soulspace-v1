@@ -23,7 +23,13 @@ export default function DreamPage() {
 
   const handleSubmit = async () => {
     if (!input.trim() || loading) return;
-    const newHistory = [...history, { role: "user", content: input }];
+    
+    // 显式标注 newHistory 的类型，防止 TypeScript 推导为 string[]
+    const newHistory: { role: "user" | "ai"; content: string }[] = [
+      ...history, 
+      { role: "user", content: input }
+    ];
+    
     setHistory(newHistory);
     setInput("");
     setLoading(true);
